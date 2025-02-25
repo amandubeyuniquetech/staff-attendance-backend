@@ -10,6 +10,11 @@ connectDB();
 
 const app = express();
 app.use(cors());
+app.use({
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
+  })
 app.use(express.json());
 
 app.use("/api/users", userRoutes);
