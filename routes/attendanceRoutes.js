@@ -77,6 +77,53 @@ router.get("/:userId", async (req, res) => {
     }
   });
   
+// 📌 Get Attendance Data for a Specific User with Month & Year Filtering
+router.get("/employee/:userId", async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { month, year } = req.query;
+
+        console.log("📌 Received request:", { userId, month, year });
+
+        if (!userId || !month || !year) {
+            console.error("❌ Missing parameters:", { userId, month, year });
+            return res.status(400).json({ error: "User ID, month, and year are required." });
+        }
+
+        // Ensure month is always two digits (e.g., 02 instead of 2)
+        const formattedMonth = month.padStart(2, '0');
+
+        // Create valid date objects
+        const startDate = new Date(`${year}-${formattedMonth}-01T00:00:00Z`);
+        const endDate = new Date(`${year}-${formattedMonth}-31T23:59:59Z`);
+
+        console.log("📅 Fetching attendance from:", startDate, "to", endDate);
+
+        if (isNaN(startDate) || isNaN(endDate)) {
+            console.error("❌ Invalid date format");
+            return res.status(400).json({ error: "Invalid month or year format." });
+        }
+
+        const attendanceRecords = await Attendance.find({
+            userId,
+            timestamp: { $gte: startDate, $lte: endDate },
+        }).sort({ timestamp: -1 });
+
+        if (!attendanceRecords.length) {
+            console.log("⚠️ No attendance records found.");
+            return res.status(404).json({ message: "No attendance records found." });
+        }
+
+        res.status(200).json(attendanceRecords);
+    } catch (error) {
+        console.error("❌ Error fetching attendance:", error);
+        res.status(500).json({ error: "Failed to fetch attendance data" });
+    }
+});
+
+
+
+
 // 🛠 Admin - Fetch attendance with filters, sorting & pagination
 router.get("/admin/attendance", verifyToken, verifyAdmin, async (req, res) => {
     try {
